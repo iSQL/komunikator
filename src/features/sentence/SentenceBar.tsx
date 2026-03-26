@@ -1,7 +1,9 @@
 import { useSentenceStore } from "./sentence.store"
+import { useSpeak } from "../speech"
 
 const SentenceBar = () => {
   const { items, removeLast, clear } = useSentenceStore()
+  const { speakSentence } = useSpeak()
 
   return (
     <div
@@ -26,6 +28,13 @@ const SentenceBar = () => {
       </div>
       {items.length > 0 && (
         <div className="flex gap-1 shrink-0">
+          <button
+            className="px-3 py-1 bg-blue-500 text-white rounded-md text-sm hover:bg-blue-600 transition-colors cursor-pointer"
+            onClick={() => speakSentence(items)}
+            aria-label="Izgovori rečenicu"
+          >
+            🔊
+          </button>
           <button
             className="px-2 py-1 bg-gray-200 rounded-md text-sm hover:bg-gray-300 transition-colors cursor-pointer"
             onClick={removeLast}

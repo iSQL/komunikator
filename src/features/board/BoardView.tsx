@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { useBoardStore } from "./board.store"
 import { useSentenceStore } from "../sentence/sentence.store"
+import { useSpeak } from "../speech"
 import Tile from "./Tile"
 import type { Tile as TileData } from "../../data"
 
@@ -10,6 +11,7 @@ const BoardView = () => {
   const { currentBoard, tiles, loadBoard, navigateToFolder, navigateBack, navigateHome, navigationStack } =
     useBoardStore()
   const append = useSentenceStore((s) => s.append)
+  const { speakTile } = useSpeak()
 
   useEffect(() => {
     loadBoard(ROOT_BOARD_ID)
@@ -20,6 +22,7 @@ const BoardView = () => {
       navigateToFolder(tile.targetBoardId)
     } else {
       append(tile)
+      speakTile(tile)
     }
   }
 
