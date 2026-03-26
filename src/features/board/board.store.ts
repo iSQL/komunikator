@@ -10,9 +10,13 @@ interface BoardState {
   navigateToFolder: (boardId: string) => Promise<void>
   navigateBack: () => Promise<void>
   navigateHome: () => Promise<void>
+  addTile: (boardId: string) => Promise<void>
+  deleteTile: (tileId: string, boardId: string) => Promise<void>
 }
 
 const ROOT_BOARD_ID = "board-root"
+
+let tileCounter = Date.now()
 
 export const useBoardStore = create<BoardState>((set, get) => ({
   currentBoard: null,
@@ -48,5 +52,41 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   navigateHome: async () => {
     set({ navigationStack: [] })
     await get().loadBoard(ROOT_BOARD_ID)
+  },
+
+  addTile: async (boardId: string) => {
+    const board = await db.boards.get(boardId)
+    if (!board) return
+    const tileId = `tile-${++tileCounter}`
+    const tile: Tile = {
+      id: tileId,
+      boardId,
+      label: "Nova",
+      symbolPath: "",
+      audioClipId: null,
+      backgroundColor: "#9CA3AF",
+      type: "symbol",
+    }
+    await db.transaction("rw", db.tiles, db.boards, async () => {
+      await db.tiles.add(tile)
+      await db.boards.update(boardId, { tileIds: [...board.tileIds, tileId] })
+    })
+    await get().loadBoard(boardId)
+  },
+
+  deleteTile: async (tileId: string, boardId: string) => {
+    const board = await db.boards.get(boardId)
+    if (!board) return
+    await db.transaction("rw", db.tiles, db.boards, db.audioClips, async () => {
+      const tile = await db.tiles.get(tileId)
+      if (tile?.audioClipId) {
+        await db.audioClips.delete(tile.audioClipId)
+      }
+      await db.tiles.delete(tileId)
+      await db.boards.update(boardId, {
+        tileIds: board.tileIds.filter((id) => id !== tileId),
+      })
+    })
+    await get().loadBoard(boardId)
   },
 }))
