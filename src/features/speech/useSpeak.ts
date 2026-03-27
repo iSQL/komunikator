@@ -24,8 +24,13 @@ export const useSpeak = () => {
     if (speaking.current || tiles.length === 0) return
     speaking.current = true
     try {
-      const fullText = tiles.map((t) => t.label).join(" ")
-      await speakText(fullText)
+      for (const tile of tiles) {
+        if (tile.audioClipId) {
+          const played = await playClip(tile.audioClipId)
+          if (played) continue
+        }
+        await speakText(tile.label)
+      }
     } finally {
       speaking.current = false
     }

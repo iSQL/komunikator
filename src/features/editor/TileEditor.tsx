@@ -3,6 +3,7 @@ import { db } from "../../data"
 import type { Tile } from "../../data"
 import { useBoardStore } from "../board/board.store"
 import useAudioRecorder from "../../shared/hooks/useAudioRecorder"
+import { evictClip } from "../speech/audioCache"
 
 const COLORS = [
   "#F87171", "#FB923C", "#FBBF24", "#A3E635",
@@ -43,6 +44,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
     const clipId = `clip-${tile.id}`
     const audio = new Audio(URL.createObjectURL(blob))
     audio.addEventListener("loadedmetadata", async () => {
+      evictClip(clipId)
       await db.audioClips.put({
         id: clipId,
         tileId: tile.id,
@@ -68,6 +70,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
   }
 
   const handleRemoveAudio = async () => {
+    evictClip(`clip-${tile.id}`)
     await db.audioClips.where("tileId").equals(tile.id).delete()
     await db.tiles.update(tile.id, { audioClipId: null })
   }
@@ -75,6 +78,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
   const handleSaveRecording = async () => {
     if (!recorder.recordedBlob) return
     const clipId = `clip-${tile.id}`
+    evictClip(clipId)
     await db.audioClips.put({
       id: clipId,
       tileId: tile.id,
