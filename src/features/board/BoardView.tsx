@@ -93,11 +93,8 @@ const BoardView = () => {
         </div>
       </div>
       <div
-        className="grid flex-1 gap-3 p-3"
-        style={{
-          gridTemplateColumns: `repeat(${currentBoard.gridColumns}, 1fr)`,
-          gridTemplateRows: `repeat(${currentBoard.gridRows}, 1fr)`,
-        }}
+        className="flex-1 min-h-0 overflow-y-auto grid gap-3 p-3 content-start"
+        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}
       >
         {tiles.map((tile) => (
           <Tile
