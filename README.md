@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# AAC Communicator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Serbian-first Augmentative and Alternative Communication (AAC) PWA. Users tap symbol tiles to build sentences and speak them. Primary audio is pre-recorded Serbian clips per symbol; Web Speech API is the fallback.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 19** + TypeScript
+- **Vite 6** + vite-plugin-pwa (Workbox) — offline-first PWA
+- **Tailwind CSS 4**
+- **Zustand** — state management
+- **Dexie.js** — IndexedDB storage (boards, tiles, audio clips)
+- **Mulberry symbols** — open-source SVG symbol set
+- **Vitest** + **Playwright** — unit and e2e tests
+- **Biome** — linting and formatting
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The app runs at `http://localhost:5173`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Commands
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev          # Vite dev server
+npm run build        # Production build
+npm run preview      # Preview production build locally
+npm run test         # Vitest unit tests
+npm run test:e2e     # Playwright e2e tests
+npm run lint         # Biome check
 ```
+
+## Project Structure
+
+```
+src/
+├── app/              # App shell, router, PWA registration
+├── features/
+│   ├── board/        # Board grid, tile rendering, navigation
+│   ├── sentence/     # Sentence bar (built sentence display)
+│   ├── speech/       # Audio playback + TTS fallback
+│   ├── editor/       # Board/tile editing
+│   └── settings/     # Language, voice, display, lock/unlock
+├── data/             # Dexie schema, seed data, TypeScript interfaces
+├── shared/           # Reusable components, hooks, utilities
+└── assets/
+    ├── symbols/      # Mulberry SVGs
+    └── audio/        # Pre-recorded Serbian mp3 clips
+```
+
+## Key Features
+
+- **Offline-first** — all boards, symbols, and audio stored in IndexedDB; works fully offline after first load
+- **Sentence building** — tap tiles to append to sentence bar; tap speaker icon to speak the full sentence
+- **Folder navigation** — folder tiles push sub-boards onto a navigation stack; back/home buttons for navigation
+- **Edit mode** — unlocked via PIN; drag-reorder, add/remove tiles, upload custom symbols and audio
+- **Responsive grid** — tiles adapt to viewport; minimum 48×48dp touch targets (WCAG)
+- **Accessibility** — `aria-label` on all tiles, `role="log"` sentence bar, keyboard navigation, high contrast mode, switch scanning
+
+## Audio Playback
+
+1. If tile has an `audioClipId` → load blob from Dexie → play via AudioContext
+2. Otherwise → speak `tile.label` via SpeechSynthesis with `sr-RS` voice
+3. If no `sr-RS` voice available → speak with default voice
+
+AudioContext is preferred over `new Audio()` for lower latency on mobile.
+
+## PWA
+
+- Service worker via `vite-plugin-pwa` (`generateSW` strategy)
+- Precaches app shell, symbol SVGs, and default audio clips
+- Runtime cache for user-uploaded content (CacheFirst)
+- In-app install prompt and update toast with reload button
