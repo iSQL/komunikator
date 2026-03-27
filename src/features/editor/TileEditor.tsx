@@ -2,6 +2,7 @@ import { useState, useRef } from "react"
 import { db } from "../../data"
 import type { Tile } from "../../data"
 import { useBoardStore } from "../board/board.store"
+import useAudioRecorder from "../../shared/hooks/useAudioRecorder"
 
 const COLORS = [
   "#F87171", "#FB923C", "#FBBF24", "#A3E635",
@@ -20,6 +21,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
   const audioInputRef = useRef<HTMLInputElement>(null)
   const symbolInputRef = useRef<HTMLInputElement>(null)
   const { currentBoard, loadBoard, deleteTile } = useBoardStore()
+  const recorder = useAudioRecorder()
 
   const handleSave = async () => {
     await db.tiles.update(tile.id, { label, backgroundColor })
@@ -65,6 +67,20 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
     if (currentBoard) await loadBoard(currentBoard.id)
   }
 
+  const handleSaveRecording = async () => {
+    if (!recorder.recordedBlob) return
+    const clipId = `clip-${tile.id}`
+    await db.audioClips.put({
+      id: clipId,
+      tileId: tile.id,
+      blob: recorder.recordedBlob,
+      mimeType: recorder.recordedBlob.type,
+      durationMs: recorder.recordedDurationMs,
+    })
+    await db.tiles.update(tile.id, { audioClipId: clipId })
+    recorder.discard()
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
       <div
@@ -107,6 +123,55 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
           >
             🔊 Otpremi audio snimak
           </button>
+
+          {recorder.state === "idle" && (
+            <button
+              className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer text-left"
+              onClick={recorder.startRecording}
+            >
+              🎙 Snimi audio snimak
+            </button>
+          )}
+
+          {recorder.state === "requesting" && (
+            <button disabled className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium text-gray-400 text-left cursor-default">
+              🎙 Tražim mikrofon...
+            </button>
+          )}
+
+          {recorder.state === "recording" && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-red-50 rounded-lg border border-red-200">
+              <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+              <span className="text-sm text-red-700 font-medium flex-1">{recorder.elapsedSeconds}s</span>
+              <button
+                className="px-2 py-1 bg-red-500 text-white rounded text-xs font-semibold hover:bg-red-600 transition-colors cursor-pointer"
+                onClick={recorder.stopRecording}
+              >
+                ⏹ Zaustavi
+              </button>
+            </div>
+          )}
+
+          {recorder.state === "recorded" && (
+            <div className="flex flex-col gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+              {/* biome-ignore lint/a11y/useMediaCaption: preview of user's own recording */}
+              <audio controls src={recorder.previewUrl ?? undefined} className="w-full h-8" />
+              <div className="flex gap-2">
+                <button
+                  className="flex-1 px-2 py-1.5 bg-green-500 text-white rounded text-xs font-semibold hover:bg-green-600 transition-colors cursor-pointer"
+                  onClick={handleSaveRecording}
+                >
+                  ✔ Koristi snimak
+                </button>
+                <button
+                  className="px-2 py-1.5 bg-gray-200 text-gray-700 rounded text-xs font-semibold hover:bg-gray-300 transition-colors cursor-pointer"
+                  onClick={recorder.discard}
+                >
+                  ✖ Odbaci
+                </button>
+              </div>
+            </div>
+          )}
 
           <input ref={symbolInputRef} type="file" accept="image/*" className="hidden" onChange={handleSymbolUpload} />
           <button
