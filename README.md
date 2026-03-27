@@ -74,3 +74,6 @@ AudioContext is preferred over `new Audio()` for lower latency on mobile.
 - Precaches app shell, symbol SVGs, and default audio clips
 - Runtime cache for user-uploaded content (CacheFirst)
 - In-app install prompt and update toast with reload button
+
+## todo
+Add icons from https://beta.arasaac.org/pictograms/search
