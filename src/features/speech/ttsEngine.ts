@@ -1,4 +1,4 @@
-const PREFERRED_LOCALE = "sr-RS"
+const PREFERRED_LOCALE = "en-US"
 
 const findSerbianVoice = (): SpeechSynthesisVoice | null => {
   const voices = speechSynthesis.getVoices()

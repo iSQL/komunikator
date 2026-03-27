@@ -67,6 +67,11 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
     if (currentBoard) await loadBoard(currentBoard.id)
   }
 
+  const handleRemoveAudio = async () => {
+    await db.audioClips.where("tileId").equals(tile.id).delete()
+    await db.tiles.update(tile.id, { audioClipId: null })
+  }
+
   const handleSaveRecording = async () => {
     if (!recorder.recordedBlob) return
     const clipId = `clip-${tile.id}`
@@ -123,6 +128,15 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
           >
             🔊 Otpremi audio snimak
           </button>
+
+          {tile.audioClipId && (
+            <button
+              className="px-3 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors cursor-pointer text-left"
+              onClick={handleRemoveAudio}
+            >
+              🗑 Ukloni audio snimak
+            </button>
+          )}
 
           {recorder.state === "idle" && (
             <button
