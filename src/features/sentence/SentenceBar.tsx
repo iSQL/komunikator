@@ -2,7 +2,7 @@ import { useSentenceStore } from "./sentence.store"
 import { useSpeak } from "../speech"
 
 const SentenceBar = () => {
-  const { items, removeLast, clear } = useSentenceStore()
+  const { items, removeAt, removeLast, clear } = useSentenceStore()
   const { speakSentence } = useSpeak()
 
   return (
@@ -19,8 +19,11 @@ const SentenceBar = () => {
         {items.map((item, i) => (
           <div
             key={`${item.id}-${i}`}
-            className="flex flex-col items-center gap-1 rounded-xl p-2 shrink-0 w-[240px] h-[240px]"
+            className="flex flex-col items-center gap-1 rounded-xl p-2 shrink-0 w-[240px] h-[240px] cursor-pointer hover:brightness-90 active:scale-95 transition-all"
             style={{ backgroundColor: item.backgroundColor }}
+            onClick={() => removeAt(i)}
+            aria-label={`Ukloni ${item.label}`}
+            role="button"
           >
             <div className="flex-1 min-h-0 w-full flex items-center justify-center overflow-hidden">
               {item.symbolPath.startsWith("data:") ? (

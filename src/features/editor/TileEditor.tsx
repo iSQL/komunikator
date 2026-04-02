@@ -213,7 +213,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
             className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer text-left"
             onClick={() => audioInputRef.current?.click()}
           >
-            🔊 Otpremi audio snimak
+            Ubaci audio snimak
           </button>
 
           {tile.audioClipId && (
@@ -221,7 +221,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
               className="px-3 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors cursor-pointer text-left"
               onClick={handleRemoveAudio}
             >
-              🗑 Ukloni audio snimak
+              Ukloni audio snimak
             </button>
           )}
 
@@ -230,7 +230,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
               className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer text-left"
               onClick={recorder.startRecording}
             >
-              🎙 Snimi audio snimak
+              Snimi audio snimak
             </button>
           )}
 
@@ -279,7 +279,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
             className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer text-left"
             onClick={() => symbolInputRef.current?.click()}
           >
-            🖼 Otpremi simbol
+            Ubaci simbol
           </button>
 
           <div className="flex flex-col gap-2 pt-1 border-t border-gray-100">
