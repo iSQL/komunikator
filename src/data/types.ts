@@ -31,4 +31,5 @@ export interface AppSettings {
   lockEditing: boolean
   highContrast: boolean
   scanningEnabled: boolean
+  sentencePauseMs: number
 }

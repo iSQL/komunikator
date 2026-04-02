@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { useBoardStore } from "./board.store"
 import { useSentenceStore } from "../sentence/sentence.store"
-import { useSettingsStore } from "../settings"
+import { useSettingsStore, SettingsPanel } from "../settings"
 import { useImportExport } from "../settings/useImportExport"
 import { useSpeak } from "../speech"
 import { TileEditor } from "../editor"
@@ -62,6 +62,7 @@ const BoardView = () => {
   const { speakTile } = useSpeak()
   const { lockEditing, toggleLock } = useSettingsStore()
   const [editingTile, setEditingTile] = useState<TileData | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const { handleExport, importInputRef, handleImportFile, importState, confirmImport, cancelImport, dismissResult } = useImportExport()
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -155,6 +156,13 @@ const BoardView = () => {
                 ⬆ Uvezi
               </button>
               <input ref={importInputRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
+              <button
+                className="px-3 py-2 bg-gray-200 rounded-lg font-semibold text-sm hover:bg-gray-300 transition-colors cursor-pointer"
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Podešavanja"
+              >
+                ⚙ Podesavanja
+              </button>
             </>
           )}
           <button
@@ -190,6 +198,9 @@ const BoardView = () => {
       </DndContext>
       {editingTile && (
         <TileEditor tile={editingTile} onClose={() => setEditingTile(null)} />
+      )}
+      {settingsOpen && (
+        <SettingsPanel onClose={() => setSettingsOpen(false)} />
       )}
       {importState === "confirm" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
