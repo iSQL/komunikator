@@ -1,0 +1,40 @@
+1. Install Capacitor
+
+npm i @capacitor/core @capacitor/android
+npm i -D @capacitor/cli
+
+2. Initialize
+
+npx cap init
+App name: Komunikator
+Package ID: something like com.yourname.komunikator
+Set webDir to dist in the generated capacitor.config.ts.
+
+3. Build & add Android
+
+npm run build
+npx cap add android
+
+4. Sync & open
+
+npx cap sync
+npx cap open android
+This opens Android Studio. From there: Build → Build APK(s) for a debug APK.
+
+Ongoing workflow
+Every time you change code:
+
+
+npm run build && npx cap sync
+Then rebuild in Android Studio (or cd android && ./gradlew assembleDebug).
+
+One thing specific to this app
+Since you use microphone recording (useAudioRecorder), add this permission to android/app/src/main/AndroidManifest.xml:
+
+
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+And for the navigator.storage.persist() call I mentioned earlier — add it in your app's init to prevent Android from ever wiping IndexedDB:
+
+
+navigator.storage?.persist()
+A good place for that is in src/app/App.tsx inside a useEffect.
