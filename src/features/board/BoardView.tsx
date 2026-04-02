@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useBoardStore } from "./board.store"
 import { useSentenceStore } from "../sentence/sentence.store"
 import { useSettingsStore } from "../settings"
+import { useImportExport } from "../settings/useImportExport"
 import { useSpeak } from "../speech"
 import { TileEditor } from "../editor"
 import Tile from "./Tile"
@@ -61,6 +62,7 @@ const BoardView = () => {
   const { speakTile } = useSpeak()
   const { lockEditing, toggleLock } = useSettingsStore()
   const [editingTile, setEditingTile] = useState<TileData | null>(null)
+  const { handleExport, importInputRef, handleImportFile, importState, confirmImport, cancelImport, dismissResult } = useImportExport()
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -130,13 +132,30 @@ const BoardView = () => {
         )}
         <div className="ml-auto flex gap-2">
           {!lockEditing && (
-            <button
-              className="px-3 py-2 bg-green-500 text-white rounded-lg font-semibold text-sm hover:bg-green-600 transition-colors cursor-pointer"
-              onClick={async () => setEditingTile(await addTile(currentBoard.id))}
-              aria-label="Dodaj pločicu"
-            >
-              + Dodaj
-            </button>
+            <>
+              <button
+                className="px-3 py-2 bg-green-500 text-white rounded-lg font-semibold text-sm hover:bg-green-600 transition-colors cursor-pointer"
+                onClick={async () => setEditingTile(await addTile(currentBoard.id))}
+                aria-label="Dodaj pločicu"
+              >
+                + Dodaj
+              </button>
+              <button
+                className="px-3 py-2 bg-gray-200 rounded-lg font-semibold text-sm hover:bg-gray-300 transition-colors cursor-pointer"
+                onClick={handleExport}
+                aria-label="Izvezi"
+              >
+                ⬇ Izvezi
+              </button>
+              <button
+                className="px-3 py-2 bg-gray-200 rounded-lg font-semibold text-sm hover:bg-gray-300 transition-colors cursor-pointer"
+                onClick={() => importInputRef.current?.click()}
+                aria-label="Uvezi"
+              >
+                ⬆ Uvezi
+              </button>
+              <input ref={importInputRef} type="file" accept=".json" className="hidden" onChange={handleImportFile} />
+            </>
           )}
           <button
             className={`px-3 py-2 rounded-lg font-semibold text-sm transition-colors cursor-pointer ${
@@ -171,6 +190,32 @@ const BoardView = () => {
       </DndContext>
       {editingTile && (
         <TileEditor tile={editingTile} onClose={() => setEditingTile(null)} />
+      )}
+      {importState === "confirm" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-4 max-w-sm w-[90vw]">
+            <p className="text-gray-800 font-medium">Ovo će zameniti sve postojeće podatke. Nastavi?</p>
+            <div className="flex gap-2">
+              <button className="flex-1 px-3 py-2 bg-red-500 text-white rounded-lg font-semibold text-sm hover:bg-red-600 cursor-pointer" onClick={confirmImport}>Nastavi</button>
+              <button className="px-3 py-2 bg-gray-100 rounded-lg font-semibold text-sm hover:bg-gray-200 cursor-pointer" onClick={cancelImport}>Otkaži</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {importState === "loading" && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 text-gray-700 font-medium">Uvozim podatke...</div>
+        </div>
+      )}
+      {(importState === "done" || importState === "error") && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl p-6 flex flex-col gap-4 max-w-sm w-[90vw]">
+            <p className="text-gray-800 font-medium">
+              {importState === "done" ? "✔ Uvoz uspešan." : "✖ Greška pri uvozu. Proveri fajl."}
+            </p>
+            <button className="px-3 py-2 bg-gray-100 rounded-lg font-semibold text-sm hover:bg-gray-200 cursor-pointer" onClick={dismissResult}>Zatvori</button>
+          </div>
+        </div>
       )}
     </div>
   )
