@@ -1,6 +1,7 @@
 import { useCallback, useRef } from "react"
 import { playClip } from "./audioCache"
 import { useSettingsStore } from "../settings"
+import { useSentenceStore } from "../sentence/sentence.store"
 import type { Tile } from "../../data"
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
@@ -21,16 +22,21 @@ export const useSpeak = () => {
   const speakSentence = useCallback(async (tiles: Tile[]) => {
     if (speaking.current || tiles.length === 0) return
     speaking.current = true
+    const { setPlayingIndex } = useSentenceStore.getState()
     try {
       const pauseMs = useSettingsStore.getState().sentencePauseMs
-      const playable = tiles.filter((t) => t.audioClipId)
-      for (let i = 0; i < playable.length; i++) {
-        await playClip(playable[i].audioClipId!)
-        if (i < playable.length - 1 && pauseMs > 0) {
+      let played = false
+      for (let i = 0; i < tiles.length; i++) {
+        if (!tiles[i].audioClipId) continue
+        if (played && pauseMs > 0) {
           await delay(pauseMs)
         }
+        setPlayingIndex(i)
+        await playClip(tiles[i].audioClipId!)
+        played = true
       }
     } finally {
+      setPlayingIndex(null)
       speaking.current = false
     }
   }, [])
