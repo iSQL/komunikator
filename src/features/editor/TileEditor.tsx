@@ -21,6 +21,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
   const [backgroundColor, setBackgroundColor] = useState(tile.backgroundColor)
   const [type, setType] = useState<"symbol" | "folder">(tile.type)
   const [targetBoardId, setTargetBoardId] = useState(tile.targetBoardId ?? "")
+  const [hasAudio, setHasAudio] = useState(!!tile.audioClipId)
   const [arasaacId, setArasaacId] = useState("")
   const [arasaacPreviewUrl, setArasaacPreviewUrl] = useState<string | null>(null)
   const [arasaacError, setArasaacError] = useState(false)
@@ -118,6 +119,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
       })
       await db.tiles.update(tile.id, { audioClipId: clipId })
       URL.revokeObjectURL(audio.src)
+      setHasAudio(true)
     })
   }
 
@@ -137,6 +139,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
     evictClip(`clip-${tile.id}`)
     await db.audioClips.where("tileId").equals(tile.id).delete()
     await db.tiles.update(tile.id, { audioClipId: null })
+    setHasAudio(false)
   }
 
   const handleSaveRecording = async () => {
@@ -151,6 +154,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
       durationMs: recorder.recordedDurationMs,
     })
     await db.tiles.update(tile.id, { audioClipId: clipId })
+    setHasAudio(true)
     recorder.discard()
   }
 
@@ -216,7 +220,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
             Ubaci audio snimak
           </button>
 
-          {tile.audioClipId && (
+          {hasAudio && (
             <button
               className="px-3 py-2 bg-orange-50 text-orange-700 rounded-lg text-sm font-medium hover:bg-orange-100 transition-colors cursor-pointer text-left"
               onClick={handleRemoveAudio}
