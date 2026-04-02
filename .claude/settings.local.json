@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd *&& git *)",
+      "Bash(cd *&& npm run *)",
+      "Bash(cd *&& npx cap *)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx cap *)",
+      "Bash(npm run:*)",
+      "Bash(ls tailwind.config* postcss.config*)"
+    ]
+  }
+}
