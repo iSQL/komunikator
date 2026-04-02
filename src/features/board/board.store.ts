@@ -12,6 +12,7 @@ interface BoardState {
   navigateHome: () => Promise<void>
   addTile: (boardId: string) => Promise<Tile>
   deleteTile: (tileId: string, boardId: string) => Promise<void>
+  reorderTiles: (boardId: string, tileIds: string[]) => Promise<void>
 }
 
 const ROOT_BOARD_ID = "board-root"
@@ -56,7 +57,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   addTile: async (boardId: string) => {
     const board = await db.boards.get(boardId)
-    if (!board) return
+    if (!board) throw new Error(`Board ${boardId} not found`)
     const tileId = `tile-${++tileCounter}`
     const tile: Tile = {
       id: tileId,
@@ -88,6 +89,11 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         tileIds: board.tileIds.filter((id) => id !== tileId),
       })
     })
+    await get().loadBoard(boardId)
+  },
+
+  reorderTiles: async (boardId: string, tileIds: string[]) => {
+    await db.boards.update(boardId, { tileIds })
     await get().loadBoard(boardId)
   },
 }))

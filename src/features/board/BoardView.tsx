@@ -6,16 +6,71 @@ import { useSpeak } from "../speech"
 import { TileEditor } from "../editor"
 import Tile from "./Tile"
 import type { Tile as TileData } from "../../data"
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+  SortableContext,
+  useSortable,
+  arrayMove,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+
+interface SortableTileProps {
+  tile: TileData
+  onTap: (tile: TileData) => void
+  onLongPress: (tile: TileData) => void
+  editMode: boolean
+}
+
+const SortableTile = ({ tile, onTap, onLongPress, editMode }: SortableTileProps) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: tile.id })
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}
+      className="relative"
+    >
+      <Tile tile={tile} onTap={onTap} onLongPress={onLongPress} />
+      {editMode && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-1 left-1 p-1 bg-black/30 rounded cursor-grab active:cursor-grabbing touch-none text-white text-xs leading-none select-none"
+          aria-label="Prevuci za sortiranje"
+        >
+          ⠿
+        </div>
+      )}
+    </div>
+  )
+}
 
 const ROOT_BOARD_ID = "board-root"
 
 const BoardView = () => {
-  const { currentBoard, tiles, loadBoard, navigateToFolder, navigateBack, navigateHome, navigationStack, addTile } =
+  const { currentBoard, tiles, loadBoard, navigateToFolder, navigateBack, navigateHome, navigationStack, addTile, reorderTiles } =
     useBoardStore()
   const append = useSentenceStore((s) => s.append)
   const { speakTile } = useSpeak()
   const { lockEditing, toggleLock } = useSettingsStore()
   const [editingTile, setEditingTile] = useState<TileData | null>(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (!over || active.id === over.id || !currentBoard) return
+    const oldIndex = tiles.findIndex((t) => t.id === active.id)
+    const newIndex = tiles.findIndex((t) => t.id === over.id)
+    const reordered = arrayMove(tiles, oldIndex, newIndex)
+    reorderTiles(currentBoard.id, reordered.map((t) => t.id))
+  }
 
   useEffect(() => {
     loadBoard(ROOT_BOARD_ID)
@@ -96,19 +151,24 @@ const BoardView = () => {
           </button>
         </div>
       </div>
-      <div
-        className="flex-1 min-h-0 overflow-y-auto grid gap-3 p-3 content-start"
-        style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}
-      >
-        {tiles.map((tile) => (
-          <Tile
-            key={tile.id}
-            tile={tile}
-            onTap={handleTileTap}
-            onLongPress={handleLongPress}
-          />
-        ))}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={tiles.map((t) => t.id)} strategy={rectSortingStrategy}>
+          <div
+            className="flex-1 min-h-0 overflow-y-auto grid gap-3 p-3 content-start"
+            style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}
+          >
+            {tiles.map((tile) => (
+              <SortableTile
+                key={tile.id}
+                tile={tile}
+                onTap={handleTileTap}
+                onLongPress={handleLongPress}
+                editMode={!lockEditing}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
       {editingTile && (
         <TileEditor tile={editingTile} onClose={() => setEditingTile(null)} />
       )}
