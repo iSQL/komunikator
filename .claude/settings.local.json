@@ -8,7 +8,11 @@
       "Bash(npx tsc:*)",
       "Bash(npx cap *)",
       "Bash(npm run:*)",
-      "Bash(ls tailwind.config* postcss.config*)"
+      "Bash(ls tailwind.config* postcss.config*)",
+      "WebFetch(domain:beta.arasaac.org)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

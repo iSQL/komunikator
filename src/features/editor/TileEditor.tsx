@@ -21,10 +21,44 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
   const [backgroundColor, setBackgroundColor] = useState(tile.backgroundColor)
   const [type, setType] = useState<"symbol" | "folder">(tile.type)
   const [targetBoardId, setTargetBoardId] = useState(tile.targetBoardId ?? "")
+  const [arasaacId, setArasaacId] = useState("")
+  const [arasaacPreviewUrl, setArasaacPreviewUrl] = useState<string | null>(null)
+  const [arasaacError, setArasaacError] = useState(false)
+  const [arasaacLoading, setArasaacLoading] = useState(false)
   const audioInputRef = useRef<HTMLInputElement>(null)
   const symbolInputRef = useRef<HTMLInputElement>(null)
   const { currentBoard, loadBoard, deleteTile } = useBoardStore()
   const recorder = useAudioRecorder()
+
+  const handleArasaacPreview = () => {
+    const id = arasaacId.trim()
+    if (!id) return
+    setArasaacError(false)
+    setArasaacPreviewUrl(`https://static.arasaac.org/pictograms/${id}/${id}_2500.png`)
+  }
+
+  const handleArasaacApply = async () => {
+    if (!arasaacPreviewUrl) return
+    setArasaacLoading(true)
+    try {
+      const response = await fetch(arasaacPreviewUrl)
+      if (!response.ok) throw new Error()
+      const blob = await response.blob()
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as string)
+        reader.readAsDataURL(blob)
+      })
+      await db.tiles.update(tile.id, { symbolPath: dataUrl })
+      if (currentBoard) await loadBoard(currentBoard.id)
+      setArasaacPreviewUrl(null)
+      setArasaacId("")
+    } catch {
+      setArasaacError(true)
+    } finally {
+      setArasaacLoading(false)
+    }
+  }
 
   const handleSetFolder = async () => {
     setType("folder")
@@ -123,7 +157,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-xl w-[90vw] max-w-md p-5 flex flex-col gap-4"
+        className="bg-white rounded-2xl shadow-xl w-[90vw] max-w-md p-5 flex flex-col gap-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-bold text-gray-800">Uredi pločicu</h2>
@@ -247,6 +281,45 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
           >
             🖼 Otpremi simbol
           </button>
+
+          <div className="flex flex-col gap-2 pt-1 border-t border-gray-100">
+            <span className="text-sm font-medium text-gray-600">ARASAAC piktogram</span>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                placeholder="ID piktograma (npr. 2842)"
+                value={arasaacId}
+                onChange={(e) => { setArasaacId(e.target.value); setArasaacPreviewUrl(null); setArasaacError(false) }}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              />
+              <button
+                className="px-3 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors cursor-pointer"
+                onClick={handleArasaacPreview}
+              >
+                Pregled
+              </button>
+            </div>
+            {arasaacError && (
+              <p className="text-xs text-red-600">Piktogram nije pronađen. Proveri ID.</p>
+            )}
+            {arasaacPreviewUrl && !arasaacError && (
+              <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg border border-gray-200">
+                <img
+                  src={arasaacPreviewUrl}
+                  alt="ARASAAC preview"
+                  className="w-16 h-16 object-contain rounded"
+                  onError={() => { setArasaacError(true); setArasaacPreviewUrl(null) }}
+                />
+                <button
+                  className="flex-1 px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-semibold hover:bg-green-600 transition-colors cursor-pointer disabled:opacity-50"
+                  onClick={handleArasaacApply}
+                  disabled={arasaacLoading}
+                >
+                  {arasaacLoading ? "Preuzimam..." : "✔ Koristi"}
+                </button>
+              </div>
+            )}
+          </div>
         </div>}
 
         <div className="flex gap-2 pt-2">
