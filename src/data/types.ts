@@ -28,9 +28,6 @@ export interface AudioClip {
 
 export interface AppSettings {
   locale: string
-  ttsVoice: string | null
-  ttsRate: number
-  ttsPitch: number
   lockEditing: boolean
   highContrast: boolean
   scanningEnabled: boolean

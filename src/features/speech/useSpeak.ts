@@ -1,20 +1,15 @@
 import { useCallback, useRef } from "react"
 import { playClip } from "./audioCache"
-import { speakText } from "./ttsEngine"
 import type { Tile } from "../../data"
 
 export const useSpeak = () => {
   const speaking = useRef(false)
 
   const speakTile = useCallback(async (tile: Tile) => {
-    if (speaking.current) return
+    if (speaking.current || !tile.audioClipId) return
     speaking.current = true
     try {
-      if (tile.audioClipId) {
-        const played = await playClip(tile.audioClipId)
-        if (played) return
-      }
-      await speakText(tile.label)
+      await playClip(tile.audioClipId)
     } finally {
       speaking.current = false
     }
@@ -26,10 +21,8 @@ export const useSpeak = () => {
     try {
       for (const tile of tiles) {
         if (tile.audioClipId) {
-          const played = await playClip(tile.audioClipId)
-          if (played) continue
+          await playClip(tile.audioClipId)
         }
-        await speakText(tile.label)
       }
     } finally {
       speaking.current = false

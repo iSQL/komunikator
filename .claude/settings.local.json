@@ -12,7 +12,8 @@
       "WebFetch(domain:beta.arasaac.org)",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(xargs grep:*)"
     ]
   }
 }
