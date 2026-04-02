@@ -22,8 +22,12 @@ const BoardView = () => {
   }, [loadBoard])
 
   const handleTileTap = (tile: TileData) => {
-    if (tile.type === "folder" && tile.targetBoardId) {
-      navigateToFolder(tile.targetBoardId)
+    if (tile.type === "folder") {
+      if (tile.targetBoardId) {
+        navigateToFolder(tile.targetBoardId)
+      } else if (!lockEditing) {
+        setEditingTile(tile)
+      }
     } else {
       append(tile)
       speakTile(tile)
@@ -73,7 +77,7 @@ const BoardView = () => {
           {!lockEditing && (
             <button
               className="px-3 py-2 bg-green-500 text-white rounded-lg font-semibold text-sm hover:bg-green-600 transition-colors cursor-pointer"
-              onClick={() => addTile(currentBoard.id)}
+              onClick={async () => setEditingTile(await addTile(currentBoard.id))}
               aria-label="Dodaj pločicu"
             >
               + Dodaj

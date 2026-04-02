@@ -10,7 +10,7 @@ interface BoardState {
   navigateToFolder: (boardId: string) => Promise<void>
   navigateBack: () => Promise<void>
   navigateHome: () => Promise<void>
-  addTile: (boardId: string) => Promise<void>
+  addTile: (boardId: string) => Promise<Tile>
   deleteTile: (tileId: string, boardId: string) => Promise<void>
 }
 
@@ -72,6 +72,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       await db.boards.update(boardId, { tileIds: [...board.tileIds, tileId] })
     })
     await get().loadBoard(boardId)
+    return tile
   },
 
   deleteTile: async (tileId: string, boardId: string) => {

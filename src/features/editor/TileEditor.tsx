@@ -19,18 +19,48 @@ interface TileEditorProps {
 const TileEditor = ({ tile, onClose }: TileEditorProps) => {
   const [label, setLabel] = useState(tile.label)
   const [backgroundColor, setBackgroundColor] = useState(tile.backgroundColor)
+  const [type, setType] = useState<"symbol" | "folder">(tile.type)
+  const [targetBoardId, setTargetBoardId] = useState(tile.targetBoardId ?? "")
   const audioInputRef = useRef<HTMLInputElement>(null)
   const symbolInputRef = useRef<HTMLInputElement>(null)
   const { currentBoard, loadBoard, deleteTile } = useBoardStore()
   const recorder = useAudioRecorder()
 
+  const handleSetFolder = async () => {
+    setType("folder")
+    if (!targetBoardId) {
+      const newBoard = {
+        id: `board-${Date.now()}`,
+        parentId: tile.boardId,
+        name: label || "Nova tabla",
+        gridColumns: 4,
+        gridRows: 4,
+        tileIds: [] as string[],
+      }
+      await db.boards.add(newBoard)
+      setTargetBoardId(newBoard.id)
+    }
+  }
+
+
   const handleSave = async () => {
-    await db.tiles.update(tile.id, { label, backgroundColor })
+    if (type === "folder" && targetBoardId) {
+      await db.boards.update(targetBoardId, { name: label })
+    }
+    await db.tiles.update(tile.id, {
+      label,
+      backgroundColor,
+      type,
+      targetBoardId: type === "folder" ? targetBoardId : undefined,
+    })
     if (currentBoard) await loadBoard(currentBoard.id)
     onClose()
   }
 
   const handleDelete = async () => {
+    if (type === "folder" && targetBoardId) {
+      await db.boards.delete(targetBoardId)
+    }
     if (currentBoard) {
       await deleteTile(tile.id, currentBoard.id)
     }
@@ -108,6 +138,25 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
         </label>
 
         <div className="flex flex-col gap-1">
+          <span className="text-sm font-medium text-gray-600">Vrsta pločice</span>
+          <div className="flex rounded-lg overflow-hidden border border-gray-300">
+            <button
+              className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer ${type === "symbol" ? "bg-blue-500 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+              onClick={() => setType("symbol")}
+            >
+              🔤 Reč
+            </button>
+            <button
+              className={`flex-1 py-2 text-sm font-medium transition-colors cursor-pointer ${type === "folder" ? "bg-blue-500 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+              onClick={handleSetFolder}
+            >
+              📁 Fascikla
+            </button>
+          </div>
+        </div>
+
+
+        <div className="flex flex-col gap-1">
           <span className="text-sm font-medium text-gray-600">Boja pozadine</span>
           <div className="grid grid-cols-6 gap-2">
             {COLORS.map((color) => (
@@ -124,7 +173,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        {type === "symbol" && <div className="flex flex-col gap-2">
           <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} />
           <button
             className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer text-left"
@@ -198,7 +247,7 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
           >
             🖼 Otpremi simbol
           </button>
-        </div>
+        </div>}
 
         <div className="flex gap-2 pt-2">
           <button
