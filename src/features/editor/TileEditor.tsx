@@ -229,13 +229,19 @@ const TileEditor = ({ tile, onClose }: TileEditorProps) => {
             </button>
           )}
 
-          {recorder.state === "idle" && (
+          {(recorder.state === "idle" || recorder.state === "error") && (
             <button
               className="px-3 py-2 bg-gray-100 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors cursor-pointer text-left"
               onClick={recorder.startRecording}
             >
               Snimi audio snimak
             </button>
+          )}
+
+          {recorder.state === "error" && (
+            <p className="text-xs text-red-600 px-1">
+              Mikrofon nije dostupan. Proveri dozvole u podešavanjima telefona.
+            </p>
           )}
 
           {recorder.state === "requesting" && (

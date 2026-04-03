@@ -1,6 +1,16 @@
 import { useState, useRef, useEffect } from "react"
+import { Capacitor, registerPlugin } from "@capacitor/core"
 
-type RecorderState = "idle" | "requesting" | "recording" | "recorded"
+type RecorderState = "idle" | "requesting" | "recording" | "recorded" | "error"
+
+interface NativeRecorderPlugin {
+  start(): Promise<void>
+  stop(): Promise<{ base64: string; mimeType: string; durationMs: number }>
+}
+
+const NativeAudioRecorder = registerPlugin<NativeRecorderPlugin>("NativeAudioRecorder")
+
+const isNative = Capacitor.isNativePlatform()
 
 interface AudioRecorderResult {
   state: RecorderState
@@ -11,6 +21,13 @@ interface AudioRecorderResult {
   startRecording: () => Promise<void>
   stopRecording: () => void
   discard: () => void
+}
+
+const base64ToBlob = (base64: string, mimeType: string): Blob => {
+  const bytes = atob(base64)
+  const buffer = new Uint8Array(bytes.length)
+  for (let i = 0; i < bytes.length; i++) buffer[i] = bytes.charCodeAt(i)
+  return new Blob([buffer], { type: mimeType })
 }
 
 const useAudioRecorder = (): AudioRecorderResult => {
@@ -40,9 +57,46 @@ const useAudioRecorder = (): AudioRecorderResult => {
     return () => clearInterval(interval)
   }, [state])
 
-  const startRecording = async () => {
+  const startNativeRecording = async () => {
     setState("requesting")
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    try {
+      await NativeAudioRecorder.start()
+      setState("recording")
+    } catch (err) {
+      setState("error")
+    }
+  }
+
+  const stopNativeRecording = async () => {
+    try {
+      const result = await NativeAudioRecorder.stop()
+      const blob = base64ToBlob(result.base64, result.mimeType)
+      const url = URL.createObjectURL(blob)
+      previewUrlRef.current = url
+      setRecordedBlob(blob)
+      setRecordedDurationMs(result.durationMs)
+      setPreviewUrl(url)
+      setState("recorded")
+    } catch (err) {
+      setState("error")
+    }
+  }
+
+  const startWebRecording = async () => {
+    setState("requesting")
+    let stream: MediaStream
+    try {
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), 8000)
+      )
+      stream = await Promise.race([
+        navigator.mediaDevices.getUserMedia({ audio: true }),
+        timeout,
+      ])
+    } catch (err) {
+      setState("error")
+      return
+    }
     streamRef.current = stream
     const mediaRecorder = new MediaRecorder(stream)
     mediaRecorderRef.current = mediaRecorder
@@ -70,8 +124,14 @@ const useAudioRecorder = (): AudioRecorderResult => {
     setState("recording")
   }
 
+  const startRecording = isNative ? startNativeRecording : startWebRecording
+
   const stopRecording = () => {
-    mediaRecorderRef.current?.stop()
+    if (isNative) {
+      stopNativeRecording()
+    } else {
+      mediaRecorderRef.current?.stop()
+    }
   }
 
   const discard = () => {

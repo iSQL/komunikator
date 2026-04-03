@@ -7,6 +7,7 @@ const App = () => {
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
+    navigator.storage?.persist()
     seedDatabase().then(() => setReady(true))
   }, [])
 

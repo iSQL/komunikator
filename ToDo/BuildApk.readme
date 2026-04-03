@@ -28,6 +28,8 @@ Every time you change code:
 npm run build && npx cap sync
 Then rebuild in Android Studio (or cd android && ./gradlew assembleDebug).
 
+and run gradle sync - File → Sync Project with Gradle Files
+
 One thing specific to this app
 Since you use microphone recording (useAudioRecorder), add this permission to android/app/src/main/AndroidManifest.xml:
 
